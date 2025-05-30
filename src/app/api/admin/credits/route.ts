@@ -106,24 +106,28 @@ export async function GET(request: NextRequest) {
       totalAmountApproved: statsData?.filter(r => r.status === 'approved').reduce((sum, r) => sum + (r.amount || 0), 0) || 0,
     }
 
-    // Transform requests to include user data
-    const transformedRequests = requests?.map(request => ({
-      id: request.id,
-      amount: request.amount,
-      payment_method: request.payment_method,
-      notes: request.notes,
-      status: request.status,
-      admin_notes: request.admin_notes,
-      created_at: request.created_at,
-      reviewed_at: request.reviewed_at,
-      payment_proof_url: request.payment_proof_url,
-      user: {
-        id: request.profiles.id,
-        email: request.profiles.email,
-        full_name: request.profiles.full_name,
-        credit_balance: request.profiles.credit_balance
+    // Transform data for response
+    const transformedRequests = (requests || []).map((request: any) => {
+      const userProfile = Array.isArray(request.profiles) ? request.profiles[0] : request.profiles
+      
+      return {
+        id: request.id,
+        amount: request.amount,
+        payment_method: request.payment_method,
+        notes: request.notes,
+        status: request.status,
+        admin_notes: request.admin_notes,
+        created_at: request.created_at,
+        reviewed_at: request.reviewed_at,
+        payment_proof_url: request.payment_proof_url,
+        user: {
+          id: userProfile?.id,
+          email: userProfile?.email,
+          full_name: userProfile?.full_name,
+          credit_balance: userProfile?.credit_balance
+        }
       }
-    })) || []
+    })
 
     return NextResponse.json({
       requests: transformedRequests,

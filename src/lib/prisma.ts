@@ -1,28 +1,39 @@
 /**
- * Prisma Database Utility
+ * Prisma Database Utility - Fixed for Prepared Statement Conflicts
  * 
- * This file provides database connections that avoid prepared statement conflicts
+ * This file provides database connections optimized for speed and efficiency
  */
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Profile, Product, GameCode, Order, OrderItem, CreditRequest } from '@prisma/client'
 
 /**
- * Create a Prisma client configured to avoid prepared statement conflicts
+ * Create a Prisma client optimized for performance and avoiding conflicts
  */
 function createPrismaClient() {
   return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error'] : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     errorFormat: 'minimal',
     datasources: {
       db: {
-        url: process.env.DATABASE_URL + "?connection_limit=1&pool_timeout=20&pgbouncer=true"
+        url: process.env.NODE_ENV === 'development' 
+          ? process.env.DATABASE_URL + "?pgbouncer=true&connection_limit=1&prepared_statements=false"
+          : process.env.DATABASE_URL
       }
     }
   })
 }
 
-// Simple client instance
-export const prisma = createPrismaClient()
+// Ensure singleton pattern - critical for avoiding prepared statement conflicts
+declare global {
+  var __prisma: PrismaClient | undefined
+}
+
+// Use global variable to ensure we only have one instance across hot reloads
+export const prisma = global.__prisma || createPrismaClient()
+
+if (process.env.NODE_ENV !== 'production') {
+  global.__prisma = prisma
+}
 
 // Export both the main client and fresh client function
 export const getFreshPrismaClient = createPrismaClient
@@ -100,6 +111,8 @@ export const db = {
           updated_at: new Date()
         }
       }),
+    
+    count: () => prisma.profile.count(),
   },
 
   // Product operations
@@ -154,12 +167,7 @@ export const db = {
     getInventoryStats: () =>
       prisma.gameCode.groupBy({
         by: ['product_id', 'is_sold'],
-        _count: { id: true },
-        include: {
-          product: {
-            select: { name: true, platform: true }
-          }
-        }
+        _count: { id: true }
       }),
     
     count: () => prisma.gameCode.count(),
@@ -286,7 +294,7 @@ export const db = {
             status: 'approved',
             reviewed_by: reviewerId,
             reviewed_at: new Date(),
-            admin_notes
+            admin_notes: adminNotes
           }
         })
 
@@ -309,37 +317,11 @@ export const db = {
           status: 'rejected',
           reviewed_by: reviewerId,
           reviewed_at: new Date(),
-          admin_notes
+          admin_notes: adminNotes
         }
       }),
     
     count: () => prisma.creditRequest.count(),
-  },
-
-  // Profile operations
-  profile: {
-    findByEmail: (email: string) =>
-      prisma.profile.findUnique({ where: { email } }),
-    
-    findById: (id: string) =>
-      prisma.profile.findUnique({ where: { id } }),
-    
-    updateCreditBalance: (id: string, amount: number) =>
-      prisma.profile.update({
-        where: { id },
-        data: { credit_balance: amount, updated_at: new Date() }
-      }),
-    
-    incrementCreditBalance: (id: string, amount: number) =>
-      prisma.profile.update({
-        where: { id },
-        data: { 
-          credit_balance: { increment: amount },
-          updated_at: new Date()
-        }
-      }),
-    
-    count: () => prisma.profile.count(),
   },
 
   // Analytics and reporting
@@ -405,4 +387,31 @@ export const db = {
 }
 
 // Export default prisma client
-export default prisma 
+export default prisma
+
+// Database optimization - ensure critical indexes exist
+export async function optimizeDatabase() {
+  try {
+    console.log('🔧 Optimizing database indexes...')
+    
+    // Use $queryRaw instead of $executeRaw to avoid prepared statement conflicts
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_status ON orders(status);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_user_id ON orders(user_id);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_payment_method ON orders(payment_method);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_email ON profiles(email);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_role ON profiles(role);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_game_codes_product_id ON game_codes(product_id);`
+    await prisma.$queryRaw`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_game_codes_is_sold ON game_codes(is_sold);`
+    
+    console.log('✅ Database indexes optimized successfully')
+  } catch (error) {
+    console.warn('⚠️ Database optimization warning:', error)
+    // Don't fail if indexes already exist
+  }
+}
+
+// Manual optimization only - run when needed
+// Call optimizeDatabase() manually from a script or admin panel if needed
+console.log('💡 Database optimization available - call optimizeDatabase() manually if needed') 

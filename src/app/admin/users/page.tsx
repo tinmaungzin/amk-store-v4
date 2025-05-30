@@ -53,6 +53,14 @@ interface UserStats {
   totalCreditBalance: number
 }
 
+interface BanDialogState {
+  open: boolean
+  user: User | null
+  action: 'ban' | 'unban' | null
+  reason: string
+  isSubmitting: boolean
+}
+
 /**
  * Admin Users Management Page
  * Super Admin: Can manage all users including creating other super admins and admins
@@ -76,6 +84,13 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [banDialog, setBanDialog] = useState<BanDialogState>({
+    open: false,
+    user: null,
+    action: null,
+    reason: '',
+    isSubmitting: false
+  })
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -134,29 +149,65 @@ export default function AdminUsersPage() {
   }, [pagination.page, searchTerm, roleFilter, statusFilter])
 
   /**
-   * Handle user ban/unban
+   * Open ban confirmation dialog
    */
-  const toggleUserBan = async (userId: string, currentlyBanned: boolean) => {
+  const openBanDialog = (user: User, action: 'ban' | 'unban') => {
+    setBanDialog({
+      open: true,
+      user,
+      action,
+      reason: '',
+      isSubmitting: false
+    })
+  }
+
+  /**
+   * Close ban dialog
+   */
+  const closeBanDialog = () => {
+    setBanDialog({
+      open: false,
+      user: null,
+      action: null,
+      reason: '',
+      isSubmitting: false
+    })
+  }
+
+  /**
+   * Handle user ban/unban with confirmation
+   */
+  const handleBanAction = async () => {
+    if (!banDialog.user || !banDialog.action) return
+
     try {
-      const action = currentlyBanned ? 'unban' : 'ban'
-      const response = await fetch(`/api/admin/users/${userId}/ban`, {
+      setBanDialog(prev => ({ ...prev, isSubmitting: true }))
+
+      const response = await fetch(`/api/admin/users/${banDialog.user.id}/ban`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ action })
+        body: JSON.stringify({ 
+          action: banDialog.action,
+          reason: banDialog.reason.trim() || undefined
+        })
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || `Failed to ${action} user`)
+        throw new Error(error.message || `Failed to ${banDialog.action} user`)
       }
 
-      toast.success(`User ${action}ned successfully`)
+      const actionText = banDialog.action === 'ban' ? 'banned' : 'unbanned'
+      toast.success(`User ${actionText} successfully`)
       fetchUsers()
+      closeBanDialog()
       
     } catch (error) {
-      console.error(`Error toggling user ban:`, error)
-      toast.error(error instanceof Error ? error.message : 'Failed to update user status')
+      console.error(`Error ${banDialog.action}ning user:`, error)
+      toast.error(error instanceof Error ? error.message : `Failed to ${banDialog.action} user`)
+    } finally {
+      setBanDialog(prev => ({ ...prev, isSubmitting: false }))
     }
   }
 
@@ -679,7 +730,7 @@ export default function AdminUsersPage() {
                               <Button
                                 variant={user.is_banned ? "outline" : "destructive"}
                                 size="sm"
-                                onClick={() => toggleUserBan(user.id, user.is_banned)}
+                                onClick={() => openBanDialog(user, user.is_banned ? 'unban' : 'ban')}
                                 className="gap-1"
                               >
                                 {user.is_banned ? (
@@ -735,6 +786,103 @@ export default function AdminUsersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Ban/Unban Confirmation Dialog */}
+      <Dialog open={banDialog.open} onOpenChange={(open) => !open && closeBanDialog()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {banDialog.action === 'ban' ? (
+                <>
+                  <Ban className="w-5 h-5 text-red-600" />
+                  Ban User
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  Unban User
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {banDialog.action === 'ban' 
+                ? 'This will prevent the user from accessing the platform'
+                : 'This will restore the user\'s access to the platform'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          {banDialog.user && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="font-medium">{banDialog.user.full_name || 'N/A'}</div>
+                <div className="text-sm text-gray-600">{banDialog.user.email}</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className={getRoleBadge(banDialog.user.role).color}>
+                    {getRoleBadge(banDialog.user.role).text}
+                  </Badge>
+                  {banDialog.user.is_banned ? (
+                    <Badge variant="destructive" className="gap-1">
+                      <Ban className="w-3 h-3" />
+                      Currently Banned
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="gap-1 text-green-600 border-green-300">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Currently Active
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="ban-reason">
+                  {banDialog.action === 'ban' ? 'Reason for ban (optional)' : 'Reason for unban (optional)'}
+                </Label>
+                <Textarea
+                  id="ban-reason"
+                  value={banDialog.reason}
+                  onChange={(e) => setBanDialog(prev => ({ ...prev, reason: e.target.value }))}
+                  placeholder={`Enter reason for ${banDialog.action}ning this user...`}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+
+              {banDialog.action === 'ban' && (
+                <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-yellow-800">
+                    <strong>Warning:</strong> This user will lose access to their account and will not be able to log in or make purchases.
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={handleBanAction}
+                  disabled={banDialog.isSubmitting}
+                  variant={banDialog.action === 'ban' ? 'destructive' : 'default'}
+                  className="flex-1"
+                >
+                  {banDialog.isSubmitting 
+                    ? (banDialog.action === 'ban' ? 'Banning...' : 'Unbanning...')
+                    : (banDialog.action === 'ban' ? 'Ban User' : 'Unban User')
+                  }
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={closeBanDialog}
+                  disabled={banDialog.isSubmitting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

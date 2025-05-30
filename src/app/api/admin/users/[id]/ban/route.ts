@@ -4,7 +4,8 @@ import { z } from 'zod'
 
 // Ban action validation schema
 const banActionSchema = z.object({
-  action: z.enum(['ban', 'unban'])
+  action: z.enum(['ban', 'unban']),
+  reason: z.string().optional()
 })
 
 /**
@@ -47,7 +48,7 @@ export async function PATCH(
       }, { status: 400 })
     }
 
-    const { action } = validation.data
+    const { action, reason } = validation.data
 
     // Get target user details
     const { data: targetUser, error: targetUserError } = await supabase
@@ -102,13 +103,16 @@ export async function PATCH(
       }, { status: 500 })
     }
 
-    // Log the action (you could extend this to create an audit trail)
+    // Enhanced audit logging with reason
     console.log(`User ${action}ned:`, {
       adminId: user.id,
       adminEmail: user.email,
+      adminRole: profile.role,
       targetUserId: targetUser.id,
       targetUserEmail: targetUser.email,
+      targetUserRole: targetUser.role,
       action,
+      reason: reason || 'No reason provided',
       timestamp: new Date().toISOString()
     })
 

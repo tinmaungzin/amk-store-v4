@@ -20,15 +20,20 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { login } from '@/lib/auth/actions'
+import { signup } from '@/lib/auth/actions'
 
 // Form validation schema
-const loginSchema = z.object({
+const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string(),
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 })
 
-type LoginFormData = z.infer<typeof loginSchema>
+type SignupFormData = z.infer<typeof signupSchema>
 
 /**
  * Password input component with show/hide toggle
@@ -54,7 +59,7 @@ function PasswordInput({
         {...field}
         disabled={disabled}
         data-testid={testId}
-        autoComplete="current-password"
+        autoComplete="new-password"
         className="pr-10"
       />
       <Button
@@ -79,13 +84,12 @@ function PasswordInput({
   )
 }
 
-export function LoginForm() {
+export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const searchParams = useSearchParams()
   
   const error = searchParams.get('error')
   const message = searchParams.get('message')
-  const redirectedFrom = searchParams.get('redirectedFrom')
 
   // Show error or message notifications only once when component mounts or params change
   useEffect(() => {
@@ -97,39 +101,34 @@ export function LoginForm() {
     }
   }, [error, message])
 
-  // Login form
-  const loginForm = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  // Signup form  
+  const signupForm = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
       email: '',
       password: '',
+      confirmPassword: '',
+      fullName: '',
     },
     mode: 'onChange', // Enable real-time validation
   })
 
-  const onLoginSubmit = async (data: LoginFormData) => {
-    console.log('🔑 Login submit:', data)
+  const onSignupSubmit = async (data: SignupFormData) => {
+    console.log('📝 Register submit:', data)
     setIsLoading(true)
-    
     try {
       const formData = new FormData()
       formData.append('email', data.email)
       formData.append('password', data.password)
-      if (redirectedFrom) {
-        formData.append('redirectTo', redirectedFrom)
-      }
+      formData.append('fullName', data.fullName)
       
-      await login(formData)
-      setIsLoading(false)
+      await signup(formData)
+      // If signup succeeds, it will redirect
+      toast.success('Account created successfully!')
     } catch (error) {
-      const isRedirect = error && typeof error === 'object' && 'message' in error && 
-                        String(error.message).includes('NEXT_REDIRECT')
-      
-      if (!isRedirect) {
-        console.error('Unexpected login error:', error)
-        toast.error('Login failed. Please try again.')
-      }
-      
+      console.error('Signup error:', error)
+      toast.error('Signup failed. Please try again.')
+    } finally {
       setIsLoading(false)
     }
   }
@@ -137,13 +136,33 @@ export function LoginForm() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+        <CardTitle>Create Account</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Form {...loginForm}>
-          <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+        <Form {...signupForm}>
+          <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
             <FormField
-              control={loginForm.control}
+              control={signupForm.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter your full name"
+                      {...field}
+                      disabled={isLoading}
+                      data-testid="signup-fullname"
+                      autoComplete="name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={signupForm.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -154,6 +173,7 @@ export function LoginForm() {
                       placeholder="Enter your email"
                       {...field}
                       disabled={isLoading}
+                      data-testid="signup-email"
                       autoComplete="email"
                     />
                   </FormControl>
@@ -163,17 +183,36 @@ export function LoginForm() {
             />
             
             <FormField
-              control={loginForm.control}
+              control={signupForm.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <PasswordInput
-                      placeholder="Enter your password"
+                      placeholder="Create a password"
                       field={field}
                       disabled={isLoading}
-                      data-testid="login-password"
+                      data-testid="signup-password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={signupForm.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput
+                      placeholder="Confirm your password"
+                      field={field}
+                      disabled={isLoading}
+                      data-testid="signup-confirm-password"
                     />
                   </FormControl>
                   <FormMessage />
@@ -186,22 +225,22 @@ export function LoginForm() {
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
         </Form>
         
         <div className="text-center">
-          <Link href="/register">
+          <Link href="/login">
             <Button
               variant="link"
               className="text-sm"
             >
-              Don't have an account? Sign up
+              Already have an account? Sign in
             </Button>
           </Link>
         </div>
       </CardContent>
     </Card>
   )
-}
+} 

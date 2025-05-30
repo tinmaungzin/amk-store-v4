@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
-import { LoginForm } from '@/components/auth/login-form'
+import { RegisterForm } from '@/components/auth/register-form'
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -10,11 +10,11 @@ export default function LoginPage() {
             AMK Store
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
+            Create your account
           </p>
         </div>
         <Suspense fallback={<div>Loading...</div>}>
-          <LoginForm />
+          <RegisterForm />
         </Suspense>
       </div>
     </div>

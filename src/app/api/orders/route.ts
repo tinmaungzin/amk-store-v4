@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { PrismaClient } from '@prisma/client'
 
 // Validation schemas
 const createOrderSchema = z.object({
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
           throw new Error(`Insufficient stock for ${product.name}. Available: ${availableStock}, Requested: ${item.quantity}`)
         }
 
-        const itemTotal = product.price * item.quantity
+        const itemTotal = Number(product.price) * item.quantity
         totalAmount += itemTotal
 
         orderItems.push({
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
 
       // 2. Check user credit balance if using credit payment
       if (validatedData.paymentMethod === 'credit') {
-        if (profile.credit_balance < totalAmount) {
+        if (Number(profile.credit_balance) < totalAmount) {
           throw new Error(`Insufficient credit balance. Required: $${totalAmount}, Available: $${profile.credit_balance}`)
         }
       }
@@ -284,6 +285,15 @@ export async function POST(request: NextRequest) {
  * GET /api/orders
  */
 export async function GET(request: NextRequest) {
+  // Create fresh client to avoid prepared statement conflicts in development
+  const freshPrisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL + "?prepared_statements=false"
+      }
+    }
+  })
+
   try {
     // Get authenticated user
     const supabase = await createClient()
@@ -303,7 +313,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Get total count first (safer for empty state)
-    const totalCount = await prisma.order.count({
+    const totalCount = await freshPrisma.order.count({
       where: { user_id: user.id }
     })
 
@@ -321,7 +331,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's orders with items and game codes
-    const orders = await prisma.order.findMany({
+    const orders = await freshPrisma.order.findMany({
       where: { user_id: user.id },
       include: {
         order_items: {
@@ -393,5 +403,7 @@ export async function GET(request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     )
+  } finally {
+    await freshPrisma.$disconnect()
   }
 } 

@@ -92,7 +92,7 @@ function ProductCard({ product }: { product: ProductWithCodes }) {
           }}
           availableStock={availableCodes}
           className="flex-1"
-          variant={inStock ? 'default' : 'secondary'}
+          variant={inStock ? 'default' : 'outline'}
         />
         <Link href={`/products/${product.id}`}>
           <Button variant="outline" size="icon">
@@ -216,7 +216,7 @@ function ProductsGrid() {
     if (searchTerm) {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     }
 
@@ -323,11 +323,11 @@ function ProductsGrid() {
               <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                 {platform}
                 <Badge variant="secondary">
-                  {platformProducts.length} {platformProducts.length === 1 ? 'product' : 'products'}
+                  {(platformProducts as ProductWithCodes[]).length} {(platformProducts as ProductWithCodes[]).length === 1 ? 'product' : 'products'}
                 </Badge>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {platformProducts.map((product) => (
+                {(platformProducts as ProductWithCodes[]).map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>

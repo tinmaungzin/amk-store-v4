@@ -191,14 +191,27 @@ async function seedProducts() {
   
   const createdProducts = []
   for (const product of products) {
-    const created = await prisma.product.upsert({
-      where: { name: product.name },
-      update: {
-        ...product,
-        updated_at: new Date()
-      },
-      create: product
+    // Check if product exists by name first
+    const existingProduct = await prisma.product.findFirst({
+      where: { name: product.name }
     })
+    
+    let created
+    if (existingProduct) {
+      // Update existing product
+      created = await prisma.product.update({
+        where: { id: existingProduct.id },
+        data: {
+          ...product,
+          updated_at: new Date()
+        }
+      })
+    } else {
+      // Create new product
+      created = await prisma.product.create({
+        data: product
+      })
+    }
     createdProducts.push(created)
   }
   

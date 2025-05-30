@@ -203,6 +203,8 @@ export async function GET(
     }
 
     // Transform response
+    const userProfile = Array.isArray(creditRequest.profiles) ? creditRequest.profiles[0] : creditRequest.profiles
+    
     const transformedRequest = {
       id: creditRequest.id,
       amount: creditRequest.amount,
@@ -214,10 +216,10 @@ export async function GET(
       reviewed_at: creditRequest.reviewed_at,
       payment_proof_url: creditRequest.payment_proof_url,
       user: {
-        id: creditRequest.profiles.id,
-        email: creditRequest.profiles.email,
-        full_name: creditRequest.profiles.full_name,
-        credit_balance: creditRequest.profiles.credit_balance
+        id: userProfile?.id,
+        email: userProfile?.email,
+        full_name: userProfile?.full_name,
+        credit_balance: userProfile?.credit_balance
       }
     }
 

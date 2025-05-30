@@ -19,6 +19,7 @@ import {
   Calendar
 } from 'lucide-react'
 import { CreditRequestForm } from '@/components/customer/credit-request-form'
+import { CreditRequestDetail } from '@/components/customer/credit-request-detail'
 import { formatDistanceToNow } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -55,12 +56,38 @@ export default function CreditsPage() {
   const [creditRequests, setCreditRequests] = useState<CreditRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false)
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0
   })
+
+  /**
+   * Fetch user's total spent from completed orders
+   */
+  const fetchTotalSpent = async () => {
+    try {
+      const response = await fetch('/api/orders?limit=1000') // Get all orders to calculate total
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders')
+      }
+
+      const { orders } = await response.json()
+      
+      // Calculate total spent from completed orders with credit payment
+      const totalSpent = orders
+        .filter((order: any) => order.status === 'completed' && order.paymentMethod === 'credit')
+        .reduce((sum: number, order: any) => sum + order.totalAmount, 0)
+
+      return totalSpent
+    } catch (error) {
+      console.error('Error fetching total spent:', error)
+      return 0 // Return 0 if there's an error, don't block the rest of the data
+    }
+  }
 
   /**
    * Fetch user's credit data and statistics
@@ -103,8 +130,8 @@ export default function CreditsPage() {
       const approvedRequests = requests.filter((req: CreditRequest) => req.status === 'approved')
       const totalAdded = approvedRequests.reduce((sum: number, req: CreditRequest) => sum + req.amount, 0)
 
-      // TODO: Get total spent from orders when implemented
-      const totalSpent = 0
+      // Fetch total spent from orders
+      const totalSpent = await fetchTotalSpent()
 
       setCreditStats({
         balance: profile.credit_balance || 0,
@@ -135,6 +162,14 @@ export default function CreditsPage() {
     setIsRequestDialogOpen(false)
     fetchCreditData()
     toast.success('Credit request submitted successfully!')
+  }
+
+  /**
+   * Handle view request details
+   */
+  const handleViewRequest = (requestId: string) => {
+    setSelectedRequestId(requestId)
+    setIsDetailDialogOpen(true)
   }
 
   /**
@@ -362,7 +397,12 @@ export default function CreditsPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="sm" className="gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="gap-1"
+                              onClick={() => handleViewRequest(request.id)}
+                            >
                               <Eye className="w-3 h-3" />
                               View
                             </Button>
@@ -398,7 +438,12 @@ export default function CreditsPage() {
                               {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
                             </div>
                           </div>
-                          <Button variant="outline" size="sm" className="w-full gap-1">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full gap-1"
+                            onClick={() => handleViewRequest(request.id)}
+                          >
                             <Eye className="w-3 h-3" />
                             View Details
                           </Button>
@@ -441,6 +486,13 @@ export default function CreditsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Credit Request Detail Dialog */}
+      <CreditRequestDetail
+        requestId={selectedRequestId}
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+      />
     </div>
   )
 } 

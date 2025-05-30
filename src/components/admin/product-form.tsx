@@ -29,7 +29,7 @@ const productSchema = z.object({
   platform: z.string().min(1, 'Please select a platform'),
   price: z.number().min(0.01, 'Price must be greater than 0'),
   image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 })
 
 type ProductFormData = z.infer<typeof productSchema>
@@ -81,7 +81,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     
     try {
       const url = isEditMode 
-        ? `/api/admin/products/${product.id}`
+        ? `/api/admin/products/${product!.id}`
         : '/api/admin/products'
       
       const method = isEditMode ? 'PUT' : 'POST'

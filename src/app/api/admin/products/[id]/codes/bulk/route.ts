@@ -9,9 +9,9 @@ const bulkUploadSchema = z.object({
 })
 
 /**
- * Verify admin access
+ * Helper function to verify admin access
  */
-async function verifyAdminAccess(supabase: ReturnType<typeof createClient>) {
+async function verifyAdminAccess(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized', status: 401 }

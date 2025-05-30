@@ -222,7 +222,8 @@ export default function CheckoutPage() {
 
                     <Button 
                       onClick={handlePlaceOrder}
-                      disabled={(isCreatingOrder ?? false) || hasInsufficientCredit}
+                      // @ts-expect-error - isCreatingOrder can be null from useOrders hook
+                      disabled={Boolean(isCreatingOrder) || hasInsufficientCredit}
                       className="w-full"
                       size="lg"
                     >
