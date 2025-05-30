@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
+import { toast } from 'sonner'
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +13,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { logout } from '@/lib/auth/actions'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { useUser } from '@/hooks/use-user'
 import { Database } from '@/types/database'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -27,8 +30,36 @@ interface UserNavProps {
  * Shows user profile, credit balance, navigation links, and logout option.
  */
 export function UserNav({ user, profile }: UserNavProps) {
+  const router = useRouter()
+  const supabase = createClient()
+  const { signOut } = useUser()
+
   const handleLogout = async () => {
-    await logout()
+    try {
+      console.log('🔑 Logout initiated')
+      
+      // Use client-side Supabase logout
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Logout error:', error)
+        toast.error('Failed to log out. Please try again.')
+        return
+      }
+
+      // Also call the UserProvider signOut to clear local state
+      await signOut()
+      
+      console.log('✅ Logout successful, authentication state will update automatically')
+      toast.success('Logged out successfully!')
+      
+      // Redirect to login page
+      router.push('/login')
+      
+    } catch (error) {
+      console.error('Unexpected logout error:', error)
+      toast.error('Failed to log out. Please try again.')
+    }
   }
 
   // Get user initials for avatar fallback
@@ -51,7 +82,7 @@ export function UserNav({ user, profile }: UserNavProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full cursor-pointer">
           <Avatar className="h-8 w-8">
             <AvatarImage src="" alt={displayName || ''} />
             <AvatarFallback>{initials}</AvatarFallback>
@@ -77,22 +108,22 @@ export function UserNav({ user, profile }: UserNavProps) {
         <DropdownMenuSeparator />
         
         <DropdownMenuItem asChild>
-          <Link href="/profile">Profile</Link>
+          <Link href="/profile" className="cursor-pointer">Profile</Link>
         </DropdownMenuItem>
         
         <DropdownMenuItem asChild>
-          <Link href="/orders">My Orders</Link>
+          <Link href="/orders" className="cursor-pointer">My Orders</Link>
         </DropdownMenuItem>
         
         <DropdownMenuItem asChild>
-          <Link href="/credits">Credits</Link>
+          <Link href="/credits" className="cursor-pointer">Credits</Link>
         </DropdownMenuItem>
 
         {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin">Admin Dashboard</Link>
+              <Link href="/admin" className="cursor-pointer">Admin Dashboard</Link>
             </DropdownMenuItem>
           </>
         )}

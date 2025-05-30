@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -20,7 +20,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { login } from '@/lib/auth/actions'
+import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/hooks/use-user'
 
 // Form validation schema
 const loginSchema = z.object({
@@ -81,11 +82,31 @@ function PasswordInput({
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const supabase = createClient()
+  const { user, profile, loading: userLoading } = useUser()
   
   const error = searchParams.get('error')
   const message = searchParams.get('message')
   const redirectedFrom = searchParams.get('redirectedFrom')
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!userLoading && user && profile) {
+      // Determine redirect based on role and redirectedFrom param
+      let redirectPath = redirectedFrom || '/'
+      
+      // If no specific redirect and user is admin, go to admin panel
+      if (!redirectedFrom && (profile.role === 'admin' || profile.role === 'super_admin')) {
+        redirectPath = '/admin'
+      }
+      
+      console.log('🔄 User already logged in, redirecting to:', redirectPath)
+      router.push(redirectPath)
+    }
+  }, [user, profile, userLoading, redirectedFrom, router])
 
   // Show error or message notifications only once when component mounts or params change
   useEffect(() => {
@@ -112,34 +133,56 @@ export function LoginForm() {
     setIsLoading(true)
     
     try {
-      const formData = new FormData()
-      formData.append('email', data.email)
-      formData.append('password', data.password)
-      if (redirectedFrom) {
-        formData.append('redirectTo', redirectedFrom)
+      // Use client-side Supabase authentication
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
+
+      if (error) {
+        console.error('Login error:', error)
+        toast.error(error.message || 'Login failed. Please try again.')
+        setIsLoading(false)
+        return
       }
+
+      // Success! The useUser hook will automatically update and the useEffect above will handle redirect
+      console.log('✅ Login successful, authentication state will update automatically')
+      toast.success('Login successful!')
       
-      await login(formData)
-      setIsLoading(false)
+      // Note: We don't need to manually redirect here because:
+      // 1. The useUser hook will detect the auth state change
+      // 2. The useEffect above will handle the redirect based on user role
+      // 3. This ensures the UI updates before redirect
+      
     } catch (error) {
-      const isRedirect = error && typeof error === 'object' && 'message' in error && 
-                        String(error.message).includes('NEXT_REDIRECT')
-      
-      if (!isRedirect) {
-        console.error('Unexpected login error:', error)
-        toast.error('Login failed. Please try again.')
-      }
-      
+      console.error('Unexpected login error:', error)
+      toast.error('Login failed. Please try again.')
       setIsLoading(false)
     }
   }
 
+  // Don't render form if user is already logged in
+  if (!userLoading && user) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              You are already logged in. Redirecting...
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         <Form {...loginForm}>
           <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
             <FormField
@@ -150,18 +193,18 @@ export function LoginForm() {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
+                      {...field}
                       type="email"
                       placeholder="Enter your email"
-                      {...field}
-                      disabled={isLoading}
                       autoComplete="email"
+                      disabled={isLoading}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={loginForm.control}
               name="password"
@@ -169,37 +212,59 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <PasswordInput
-                      placeholder="Enter your password"
-                      field={field}
-                      disabled={isLoading}
-                      data-testid="login-password"
-                    />
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                        disabled={isLoading}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">
+                          {showPassword ? "Hide password" : "Show password"}
+                        </span>
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <Button 
               type="submit" 
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
         </Form>
-        
-        <div className="text-center">
-          <Link href="/register">
-            <Button
-              variant="link"
-              className="text-sm"
+
+        <div className="mt-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{' '}
+            <Link 
+              href="/register" 
+              className="font-medium text-primary hover:underline"
             >
-              Don't have an account? Sign up
-            </Button>
-          </Link>
+              Sign up
+            </Link>
+          </p>
         </div>
       </CardContent>
     </Card>

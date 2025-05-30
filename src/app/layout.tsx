@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConditionalNavigation } from "@/components/shared/conditional-navigation";
+import { ConditionalFooter } from "@/components/shared/conditional-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionalCartProvider } from "@/components/shared/conditional-cart-provider";
 import { UserProvider } from "@/hooks/use-user";
@@ -57,9 +58,30 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="AMK Store" />
+        <script 
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Prevent ethereum-related errors from browser extensions
+              if (typeof window !== 'undefined' && window.ethereum) {
+                try {
+                  // Only set if it doesn't already exist to avoid overriding legitimate values
+                  if (window.ethereum.selectedAddress === undefined) {
+                    Object.defineProperty(window.ethereum, 'selectedAddress', {
+                      value: null,
+                      writable: true,
+                      configurable: true
+                    });
+                  }
+                } catch (e) {
+                  // Silently ignore errors
+                }
+              }
+            `
+          }} 
+        />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50 flex flex-col`}
       >
         <UserProvider>
           <ConditionalCartProvider>
@@ -67,6 +89,7 @@ export default function RootLayout({
             <main className="flex-1">
               {children}
             </main>
+            <ConditionalFooter />
           </ConditionalCartProvider>
         </UserProvider>
         <Toaster />
