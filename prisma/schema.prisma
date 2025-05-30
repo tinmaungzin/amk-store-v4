@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User profiles extending Supabase auth.users
+model Profile {
+  id             String   @id @db.Uuid
+  email          String   @unique
+  full_name      String?  @map("full_name")
+  credit_balance Decimal  @default(0.00) @map("credit_balance") @db.Decimal(10, 2)
+  role           String   @default("customer") // customer, admin, super_admin
+  created_at     DateTime @default(now()) @map("created_at")
+  updated_at     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  orders          Order[]
+  credit_requests CreditRequest[]
+  reviewed_requests CreditRequest[] @relation("ReviewedBy")
+
+  @@map("profiles")
+}
+
+// Products table
+model Product {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  platform    String   // PS5, Xbox, Roblox, PC, etc.
+  price       Decimal  @db.Decimal(10, 2)
+  image_url   String?  @map("image_url")
+  is_active   Boolean  @default(true) @map("is_active")
+  created_at  DateTime @default(now()) @map("created_at")
+  updated_at  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  game_codes  GameCode[]
+  order_items OrderItem[]
+
+  @@map("products")
+}
+
+// Game codes table (encrypted)
+model GameCode {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id     String    @map("product_id") @db.Uuid
+  encrypted_code String    @map("encrypted_code")
+  is_sold        Boolean   @default(false) @map("is_sold")
+  sold_at        DateTime? @map("sold_at")
+  order_id       String?   @map("order_id") @db.Uuid
+  created_at     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  product    Product    @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  order      Order?     @relation(fields: [order_id], references: [id])
+  order_item OrderItem?
+
+  @@map("game_codes")
+}
+
+// Orders table
+model Order {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @map("user_id") @db.Uuid
+  total_amount   Decimal  @map("total_amount") @db.Decimal(10, 2)
+  payment_method String   @map("payment_method") // credit, external
+  status         String   @default("pending") // pending, completed, cancelled
+  created_at     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user        Profile     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  order_items OrderItem[]
+  game_codes  GameCode[]
+
+  @@map("orders")
+}
+
+// Order items table
+model OrderItem {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id     String  @map("order_id") @db.Uuid
+  product_id   String  @map("product_id") @db.Uuid
+  game_code_id String? @unique @map("game_code_id") @db.Uuid
+  quantity     Int     @default(1)
+  unit_price   Decimal @map("unit_price") @db.Decimal(10, 2)
+  created_at   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  order     Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  game_code GameCode? @relation(fields: [game_code_id], references: [id])
+
+  @@map("order_items")
+}
+
+// Credit requests table
+model CreditRequest {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String    @map("user_id") @db.Uuid
+  amount             Decimal   @db.Decimal(10, 2)
+  payment_proof_url  String?   @map("payment_proof_url")
+  status             String    @default("pending") // pending, approved, rejected
+  admin_notes        String?   @map("admin_notes")
+  reviewed_by        String?   @map("reviewed_by") @db.Uuid
+  reviewed_at        DateTime? @map("reviewed_at")
+  created_at         DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user     Profile  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer Profile? @relation("ReviewedBy", fields: [reviewed_by], references: [id])
+
+  @@map("credit_requests")
+}

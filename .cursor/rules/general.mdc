@@ -1,0 +1,134 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Rules - Game Codes E-commerce Platform
+## 🔍 Documentation Validation (MANDATORY FIRST STEP)
+- **ALWAYS use Context7 MCP server for documentation validation** before taking any action or starting any task.
+- **Validate against project documentation** (`PLANNING.md`, `TASK.md`, `README.md`) to ensure alignment with project architecture and requirements.
+- **Never proceed with any development work** until documentation context has been validated through Context7 MCP server.
+- **If Context7 validation reveals conflicts or missing information**, address documentation gaps before proceeding with implementation.
+- **you don't have access to .env related files, you can't read or write, so when there is somthing involve with .env envronment file, just give me instruction in the chat , which new env vars to add and how final env file should look like
+
+## 📋 Task Management
+- **Check `TASK.md`** before starting a new task. If the task isn't listed, add it with a brief description and today's date.
+- **Use consistent naming conventions, file structure, and architecture patterns** as described in `PLANNING.md`.
+
+## 🧱 Code Structure & Modularity
+- **Never create a file longer than 500 lines of code.** If a file approaches this limit, refactor by splitting it into components, hooks, or utility files.
+- **Organize code into clearly separated modules**, grouped by feature or responsibility following Next.js conventions:
+  ```
+  /app (or /pages)
+  /components
+    /ui (shadcn components)
+    /customer (customer-specific)
+    /admin (admin-specific)
+    /shared (shared components)
+  /lib
+    /utils.ts (shadcn utilities)
+    /supabase
+    /validations
+  /hooks
+  /types
+  /constants
+  ```
+- **Use clear, consistent imports** (prefer absolute imports with path aliases like `@/components/ui`).
+
+## 🎯 Next.js & React Best Practices
+- **Use Next.js App Router** for new routes and layouts.
+- **Create reusable components** with proper TypeScript interfaces.
+- **Use Server Components by default**, Client Components only when needed (interactivity, browser APIs).
+- **Implement proper error boundaries** and loading states.
+- **Follow React Hook rules** and create custom hooks for reusable logic.
+
+## 🧪 Testing & Reliability
+- **Always create Jest/React Testing Library unit tests for new features** (components, hooks, utilities, API routes).
+- **After updating any logic**, check whether existing unit tests need to be updated. If so, do it.
+- **Tests should live in a `__tests__` folder** or alongside files with `.test.tsx/.test.ts` suffix.
+  - Include at least:
+    - 1 test for expected behavior
+    - 1 edge case
+    - 1 error handling case
+
+## ✅ Task Completion
+- **Mark completed tasks in `TASK.md`** immediately after finishing them.
+- Add new sub-tasks or TODOs discovered during development to `TASK.md` under a "Discovered During Work" section.
+
+## 📎 Style & Conventions
+- **Use TypeScript** as the primary language with strict mode enabled.
+- **Follow ESLint rules**, use Prettier for formatting.
+- **Use Zod for runtime data validation** and type inference.
+- **Use Supabase client** for database operations and authentication.
+- **Use Tailwind CSS + shadcn** for styling with consistent design tokens and accessible components.
+- **Follow shadcn patterns** for component composition and customization.
+- Write **JSDoc comments for every function** using TypeScript conventions:
+  ```typescript
+  /**
+   * Brief summary of what the function does.
+   * @param param1 - Description of parameter
+   * @returns Description of return value
+   * @throws Description of when errors might occur
+   */
+  ```
+
+## 🔒 Security & Data Handling
+- **Never store sensitive data in client-side code** (API keys, encryption keys, etc.).
+- **Use Supabase RLS policies** for data access control.
+- **Validate all user inputs** using Zod schemas.
+- **Implement proper error handling** without exposing sensitive information.
+- **Use environment variables** for configuration and secrets.
+
+## 🎨 UI/UX Standards
+- **Use shadcn components** as the primary UI component library with Radix UI primitives.
+- **Follow responsive design principles** using Tailwind's responsive utilities and shadcn breakpoints.
+- **Implement proper loading states** using shadcn Skeleton and Spinner components.
+- **Use shadcn error boundaries** and Toast notifications for error handling.
+- **Maintain consistent spacing and typography** following shadcn design tokens.
+- **Ensure accessibility** with shadcn's built-in ARIA support and semantic HTML.
+- **Test on mobile devices** with shadcn responsive components.
+- **Implement dark/light mode** using shadcn Theme provider.
+
+## 📚 Documentation & Explainability
+- **Update `README.md`** when new features are added, dependencies change, or setup steps are modified.
+- **Comment non-obvious code** and ensure everything is understandable to a mid-level developer.
+- When writing complex logic, **add an inline `// Reason:` comment** explaining the why, not just the what.
+- **Document API routes** with clear parameter and response types.
+
+## 🗄️ Database & API Patterns
+- **Use TypeScript interfaces** for database schema types.
+- **Create reusable Supabase query functions** in `/lib/supabase/` directory.
+- **Implement proper error handling** for database operations.
+- **Use Server Actions** for form submissions and data mutations when appropriate.
+- **Cache static data** using Next.js caching strategies.
+
+## 🧠 AI Behavior Rules
+- **MANDATORY: Use Context7 MCP server validation as the first step** for every request, action, or task before any development work begins.
+- **Never assume missing context. Ask questions if uncertain.**
+- **Never hallucinate libraries or functions** – only use known, verified npm packages compatible with Next.js 14+.
+- **Always confirm file paths and component names** exist before referencing them in code or imports.
+- **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from `TASK.md`.
+- **Follow the dual-interface architecture** (customer website + admin panel) as outlined in `PLANNING.md`.
+- **If Context7 MCP server is unavailable**, explicitly state this and request manual documentation review before proceeding.
+
+## 🚀 Performance & Optimization
+- **Use Next.js Image component** for all images.
+- **Implement proper code splitting** using dynamic imports when needed.
+- **Optimize bundle size** by avoiding unnecessary dependencies.
+- **Use React.memo, useMemo, useCallback** appropriately to prevent unnecessary re-renders.
+- **Implement proper SEO** with Next.js metadata API.
+
+## 🛠️ Development Workflow
+- **Use feature branches** for new development.
+- **Write meaningful commit messages** following conventional commits.
+- **Test locally** before pushing changes.
+- **Update both customer and admin interfaces** when adding new features that affect both.
+- **Consider mobile-first responsive design** for all UI components.
+
+## 📦 Package Management
+- **Use npm** as the package manager.
+- **Keep dependencies up to date** and audit for security vulnerabilities.
+- **Prefer well-maintained packages** with good TypeScript support.
+- **Use shadcn CLI** for adding new UI components: `npx shadcn-ui@latest add [component]`.
+- **Document any custom configurations** in the appropriate config files.
+- **Follow shadcn installation and customization guidelines** for component modifications.
