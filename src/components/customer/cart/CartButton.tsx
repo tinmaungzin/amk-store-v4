@@ -18,7 +18,7 @@ export function CartButton() {
     <Button
       variant="outline"
       size="sm"
-      className="relative"
+      className="relative cursor-pointer transition-all duration-200 hover:bg-gray-50"
       onClick={toggleCart}
       aria-label={`Shopping cart with ${state.totalItems} items`}
     >
@@ -26,7 +26,7 @@ export function CartButton() {
       {state.totalItems > 0 && (
         <Badge 
           variant="destructive" 
-          className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+          className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-in fade-in-0 zoom-in-75 duration-200"
         >
           {state.totalItems > 99 ? '99+' : state.totalItems}
         </Badge>

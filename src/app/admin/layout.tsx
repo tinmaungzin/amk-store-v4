@@ -1,7 +1,6 @@
 import { AdminProtectedPage } from '@/components/auth/protected-page'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { AdminHeader } from '@/components/admin/admin-header'
-import { UserProvider } from '@/hooks/use-user'
 
 /**
  * Admin layout component
@@ -16,21 +15,19 @@ export default function AdminLayout({
 }) {
   return (
     <AdminProtectedPage>
-      <UserProvider>
-        <div className="min-h-screen bg-gray-50">
-          <div className="flex h-screen">
-            <AdminSidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <AdminHeader />
-              <main className="flex-1 overflow-y-auto">
-                <div className="p-4 lg:p-6">
-                  {children}
-                </div>
-              </main>
-            </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex h-screen">
+          <AdminSidebar />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <AdminHeader />
+            <main className="flex-1 overflow-y-auto">
+              <div className="p-4 lg:p-6">
+                {children}
+              </div>
+            </main>
           </div>
         </div>
-      </UserProvider>
+      </div>
     </AdminProtectedPage>
   )
 } 

@@ -1,7 +1,7 @@
 /**
  * Cart Sheet Component
  * 
- * Displays the shopping cart contents in a slide-out sheet/modal.
+ * Displays the shopping cart contents in a slide-out sheet/modal with smooth animations.
  */
 
 'use client'
@@ -17,7 +17,7 @@ import Link from 'next/link'
 export function CartSheet() {
   const { state, closeCart, removeItem, updateQuantity, clearCart } = useCart()
 
-  // Close cart on escape key
+  // Close cart on escape key and handle body scroll
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -25,39 +25,62 @@ export function CartSheet() {
       }
     }
 
+    // Close cart when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (state.isOpen && !target.closest('.cart-sheet-container')) {
+        closeCart()
+      }
+    }
+
     if (state.isOpen) {
       document.addEventListener('keydown', handleEscape)
+      document.addEventListener('mousedown', handleClickOutside)
+      // Prevent body scroll when cart is open
       document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape)
+      document.removeEventListener('mousedown', handleClickOutside)
       document.body.style.overflow = 'unset'
     }
   }, [state.isOpen, closeCart])
 
-  if (!state.isOpen) return null
-
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop with transparent blur overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 z-50" 
+        className={`fixed inset-0 backdrop-blur-sm bg-black/20 z-50 transition-all duration-300 ease-in-out ${
+          state.isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
         onClick={closeCart}
         aria-hidden="true"
       />
       
-      {/* Cart Sheet */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-background shadow-xl z-50 flex flex-col">
+      {/* Cart Sheet with smooth slide - Always rendered but positioned off-screen when closed */}
+      <div 
+        className={`cart-sheet-container fixed right-0 top-0 h-full w-full max-w-md bg-white/95 backdrop-blur-md shadow-2xl z-50 flex flex-col transform transition-all duration-300 ease-in-out ${
+          state.isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b bg-gray-50/80 backdrop-blur-sm">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5" />
+            <ShoppingBag className="h-5 w-5 text-blue-600" />
             <h2 className="text-lg font-semibold">
               Shopping Cart ({state.totalItems})
             </h2>
           </div>
-          <Button variant="ghost" size="sm" onClick={closeCart}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={closeCart}
+            className="cursor-pointer transition-all duration-200 hover:bg-gray-200/50"
+          >
             <X className="h-4 w-4" />
             <span className="sr-only">Close cart</span>
           </Button>
@@ -72,7 +95,7 @@ export function CartSheet() {
               <p className="text-muted-foreground mb-4">
                 Add some products to get started!
               </p>
-              <Button onClick={closeCart} variant="outline">
+              <Button onClick={closeCart} variant="outline" className="cursor-pointer transition-all duration-200 hover:bg-gray-50">
                 Continue Shopping
               </Button>
             </div>
@@ -80,7 +103,7 @@ export function CartSheet() {
             <div className="space-y-4">
               {/* Cart Items */}
               {state.items.map((item) => (
-                <Card key={item.productId}>
+                <Card key={item.productId} className="transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       {/* Product Info */}
@@ -97,7 +120,7 @@ export function CartSheet() {
                             variant="ghost"
                             size="sm"
                             onClick={() => removeItem(item.productId)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer transition-all duration-200 hover:scale-110"
                           >
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Remove item</span>
@@ -114,6 +137,7 @@ export function CartSheet() {
                           size="sm"
                           onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                           disabled={item.quantity <= 1}
+                          className="cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:scale-105"
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
@@ -125,6 +149,7 @@ export function CartSheet() {
                           size="sm"
                           onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                           disabled={item.quantity >= item.maxStock}
+                          className="cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:scale-105"
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
@@ -145,7 +170,7 @@ export function CartSheet() {
               {state.items.length > 0 && (
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full cursor-pointer transition-all duration-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 hover:scale-[1.02]"
                   onClick={clearCart}
                 >
                   Clear Cart
@@ -157,7 +182,7 @@ export function CartSheet() {
 
         {/* Footer */}
         {state.items.length > 0 && (
-          <div className="border-t p-4 space-y-4">
+          <div className="border-t p-4 space-y-4 bg-gray-50/80 backdrop-blur-sm">
             {/* Total */}
             <div className="flex items-center justify-between text-lg font-semibold">
               <span>Total:</span>
@@ -167,13 +192,17 @@ export function CartSheet() {
             {/* Action Buttons */}
             <div className="space-y-2">
               <Link href="/checkout" className="block">
-                <Button className="w-full" size="lg" onClick={closeCart}>
+                <Button 
+                  className="w-full cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:scale-[1.02]" 
+                  size="lg" 
+                  onClick={closeCart}
+                >
                   Proceed to Checkout
                 </Button>
               </Link>
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:scale-[1.02]"
                 onClick={closeCart}
               >
                 Continue Shopping

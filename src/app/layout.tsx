@@ -4,6 +4,7 @@ import "./globals.css";
 import { ConditionalNavigation } from "@/components/shared/conditional-navigation";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionalCartProvider } from "@/components/shared/conditional-cart-provider";
+import { UserProvider } from "@/hooks/use-user";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,26 @@ export const metadata: Metadata = {
   title: "AMK Store - Digital Game Codes Marketplace",
   description: "Secure marketplace for digital game codes including PS5, Xbox, Roblox, and more. Buy with confidence and get instant delivery.",
   keywords: ["game codes", "digital games", "PS5", "Xbox", "Roblox", "gaming", "marketplace"],
+  icons: {
+    icon: [
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+      },
+      {
+        url: '/favicon.ico',
+        sizes: 'any',
+      },
+    ],
+    apple: {
+      url: '/favicon.svg',
+      type: 'image/svg+xml',
+    },
+  },
+  manifest: '/site.webmanifest',
+  themeColor: '#3B82F6',
+  colorScheme: 'light',
+  viewport: 'width=device-width, initial-scale=1',
 };
 
 export default function RootLayout({
@@ -27,15 +48,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#3B82F6" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="AMK Store" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}
       >
-        <ConditionalCartProvider>
-          <ConditionalNavigation />
-          <main className="flex-1">
-            {children}
-          </main>
-        </ConditionalCartProvider>
+        <UserProvider>
+          <ConditionalCartProvider>
+            <ConditionalNavigation />
+            <main className="flex-1">
+              {children}
+            </main>
+          </ConditionalCartProvider>
+        </UserProvider>
         <Toaster />
       </body>
     </html>
