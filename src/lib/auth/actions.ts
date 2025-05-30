@@ -16,8 +16,11 @@ const signupSchema = authSchema.extend({
 })
 
 /**
- * Server action to handle user login.
- * @param formData - Form data containing email and password
+ * Server action to handle user login with role-based redirection.
+ * - Customers (role: 'customer') are redirected to '/' (homepage)
+ * - Admin and Super Admin users are redirected to '/admin' (admin panel)
+ * - If a specific redirectTo parameter is provided, it takes precedence over role-based redirect
+ * @param formData - Form data containing email, password, and optional redirectTo
  */
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -44,14 +47,32 @@ export async function login(formData: FormData) {
     redirect('/login?error=Invalid email or password')
   }
 
-  // Check if user needs to be redirected to a specific page
+  // Get user profile to determine role-based redirect
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  let roleBasedRedirect = '/' // Default to homepage for customers
+  
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    // Redirect admin and super_admin users to admin panel
+    if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+      roleBasedRedirect = '/admin'
+    }
+  }
+
+  // Check if user needs to be redirected to a specific page (takes precedence over role-based redirect)
   const redirectTo = formData.get('redirectTo') as string
   revalidatePath('/', 'layout')
   
   if (redirectTo) {
     redirect(redirectTo)
   } else {
-    redirect('/')
+    redirect(roleBasedRedirect)
   }
 }
 

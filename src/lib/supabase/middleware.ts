@@ -6,11 +6,14 @@ import { Database } from '@/types/database'
  * Updates the user session using Supabase authentication.
  * This function handles session refreshing and manages authentication state.
  * @param request - The incoming NextRequest
+ * @param requestHeaders - Optional custom headers to include in the response
  * @returns NextResponse with updated session cookies
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest, requestHeaders?: Headers) {
   let supabaseResponse = NextResponse.next({
-    request
+    request: {
+      headers: requestHeaders || request.headers,
+    }
   })
 
   const supabase = createServerClient<Database>(
@@ -24,7 +27,9 @@ export async function updateSession(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
-            request
+            request: {
+              headers: requestHeaders || request.headers,
+            }
           })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)

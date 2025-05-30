@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -48,6 +48,16 @@ export function LoginForm() {
   const message = searchParams.get('message')
   const redirectedFrom = searchParams.get('redirectedFrom')
 
+  // Show error or message notifications only once when component mounts or params change
+  useEffect(() => {
+    if (error) {
+      toast.error(error)
+    }
+    if (message) {
+      toast.success(message)
+    }
+  }, [error, message]) // Only run when error or message changes
+
   // Login form
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -68,8 +78,17 @@ export function LoginForm() {
     },
   })
 
+  // Reset forms and loading state when switching between login/signup
+  const toggleSignup = () => {
+    setIsLoading(false) // Reset loading state
+    loginForm.reset() // Reset login form
+    signupForm.reset() // Reset signup form
+    setIsSignup(!isSignup)
+  }
+
   const onLoginSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
+    
     try {
       const formData = new FormData()
       formData.append('email', data.email)
@@ -79,9 +98,20 @@ export function LoginForm() {
       }
       
       await login(formData)
-    } catch {
-      toast.error('Login failed. Please try again.')
-    } finally {
+      // If we reach here, the login didn't redirect (unexpected)
+      setIsLoading(false)
+    } catch (error) {
+      // Server actions with redirect() always throw - this is expected for both success and failure
+      // Actual login errors are handled by redirecting back to login page with error params
+      // which will be shown via the useEffect hook above
+      const isRedirect = error && typeof error === 'object' && 'message' in error && 
+                        String(error.message).includes('NEXT_REDIRECT')
+      
+      if (!isRedirect) {
+        // Only log unexpected errors that aren't redirects
+        console.error('Unexpected login error:', error)
+      }
+      
       setIsLoading(false)
     }
   }
@@ -100,14 +130,6 @@ export function LoginForm() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Show error or message notifications
-  if (error) {
-    toast.error(error)
-  }
-  if (message) {
-    toast.success(message)
   }
 
   return (
@@ -132,6 +154,8 @@ export function LoginForm() {
                         placeholder="Enter your full name"
                         {...field}
                         disabled={isLoading}
+                        data-testid="signup-fullname"
+                        autoComplete="name"
                       />
                     </FormControl>
                     <FormMessage />
@@ -151,6 +175,8 @@ export function LoginForm() {
                         placeholder="Enter your email"
                         {...field}
                         disabled={isLoading}
+                        data-testid="signup-email"
+                        autoComplete="email"
                       />
                     </FormControl>
                     <FormMessage />
@@ -260,7 +286,7 @@ export function LoginForm() {
         <div className="text-center">
           <Button
             variant="link"
-            onClick={() => setIsSignup(!isSignup)}
+            onClick={toggleSignup}
             disabled={isLoading}
             className="text-sm"
           >

@@ -1,28 +1,40 @@
 /**
  * Prisma Database Utility
  * 
- * This file provides a singleton Prisma client instance and
- * type-safe database operations for the AMK Store application.
+ * This file provides database connections that avoid prepared statement conflicts
  */
 
 import { PrismaClient } from '@prisma/client'
 
-// Declare global variable for Prisma client in development
-declare global {
-  var __prisma: PrismaClient | undefined
+/**
+ * Create a Prisma client configured to avoid prepared statement conflicts
+ */
+function createPrismaClient() {
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error'] : ['error'],
+    errorFormat: 'minimal',
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL + "?connection_limit=1&pool_timeout=20&pgbouncer=true"
+      }
+    }
+  })
 }
 
-// Create singleton Prisma client
-const prisma = globalThis.__prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+// Simple client instance
+export const prisma = createPrismaClient()
+
+// Export both the main client and fresh client function
+export const getFreshPrismaClient = createPrismaClient
+
+// Graceful shutdown
+process.on('beforeExit', async () => {
+  try {
+    await prisma.$disconnect()
+  } catch (error) {
+    console.error('Error disconnecting Prisma:', error)
+  }
 })
-
-// In development, attach to global to prevent multiple instances
-if (process.env.NODE_ENV === 'development') {
-  globalThis.__prisma = prisma
-}
-
-export { prisma }
 
 /**
  * Type definitions for better developer experience

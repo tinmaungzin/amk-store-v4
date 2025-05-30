@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/products
@@ -13,7 +13,19 @@ import { db } from '@/lib/prisma'
  */
 export async function GET() {
   try {
-    const products = await db.product.findWithAvailableCodes()
+    const products = await prisma.product.findMany({
+      where: { 
+        is_active: true,
+        game_codes: {
+          some: { is_sold: false }
+        }
+      },
+      include: {
+        _count: {
+          select: { game_codes: { where: { is_sold: false } } }
+        }
+      }
+    })
     
     return NextResponse.json(products)
   } catch (error) {

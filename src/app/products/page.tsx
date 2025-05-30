@@ -198,11 +198,18 @@ function ProductsGrid() {
 
   // Get unique platforms
   const platforms = useMemo(() => {
+    if (!Array.isArray(products) || products.length === 0) {
+      return []
+    }
     return Array.from(new Set(products.map(p => p.platform))).sort()
   }, [products])
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
+    if (!Array.isArray(products) || products.length === 0) {
+      return []
+    }
+    
     let filtered = products
 
     // Search filter
@@ -256,7 +263,7 @@ function ProductsGrid() {
     return <ProductsLoadingSkeleton />
   }
 
-  if (products.length === 0) {
+  if (!Array.isArray(products) || products.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold mb-2">No products found</h3>
@@ -285,7 +292,7 @@ function ProductsGrid() {
       {/* Results Summary */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Showing {filteredAndSortedProducts.length} of {products.length} products
+          Showing {filteredAndSortedProducts.length} of {Array.isArray(products) ? products.length : 0} products
           {searchTerm && ` for "${searchTerm}"`}
           {selectedPlatform !== 'all' && ` in ${selectedPlatform}`}
         </div>

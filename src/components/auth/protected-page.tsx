@@ -36,23 +36,43 @@ export async function ProtectedPage({
 
   // If role is required, check user's role
   if (requiredRole) {
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
 
-    if (profileError || !profile) {
+      if (profileError) {
+        console.error('Error fetching user profile for auth check:', profileError)
+        // If we can't fetch the profile due to RLS, assume they don't have admin access
+        // This is a security-first approach
+        redirect('/')
+        return
+      }
+
+      if (!profile) {
+        console.error('No profile found for user:', user.id)
+        redirect('/')
+        return
+      }
+
+      // Check if user has required role
+      const hasRequiredRole = Array.isArray(requiredRole)
+        ? requiredRole.includes(profile.role)
+        : profile.role === requiredRole
+
+      if (!hasRequiredRole) {
+        console.log(`User role '${profile.role}' does not match required role(s):`, requiredRole)
+        redirect('/')
+        return
+      }
+
+      console.log(`✅ User ${user.email} with role '${profile.role}' granted access`)
+    } catch (error) {
+      console.error('Unexpected error during role check:', error)
       redirect('/')
-    }
-
-    // Check if user has required role
-    const hasRequiredRole = Array.isArray(requiredRole)
-      ? requiredRole.includes(profile.role)
-      : profile.role === requiredRole
-
-    if (!hasRequiredRole) {
-      redirect('/')
+      return
     }
   }
 

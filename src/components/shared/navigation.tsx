@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { UserNav } from './user-nav'
@@ -7,8 +8,18 @@ import { CartButton } from '@/components/customer/cart/CartButton'
 /**
  * Main navigation component that adapts based on user authentication state.
  * Shows different navigation options for guests, customers, and admins.
+ * Automatically hides on admin routes.
  */
 export async function Navigation() {
+  // Check if we're on an admin route
+  const headersList = await headers()
+  const pathname = headersList.get('x-pathname') || ''
+  
+  // Don't show customer navigation on admin routes
+  if (pathname.startsWith('/admin')) {
+    return null
+  }
+
   const supabase = await createClient()
   
   const {
