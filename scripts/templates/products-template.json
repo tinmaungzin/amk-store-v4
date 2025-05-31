@@ -1,0 +1,96 @@
+{
+  "products": [
+    {
+      "name": "Spider-Man 2 PS5 Digital Edition",
+      "description": "Experience the latest Spider-Man adventure featuring both Peter Parker and Miles Morales. Digital download code for PlayStation 5.",
+      "platform": "PS5",
+      "price": 69.99,
+      "image_url": "/images/spiderman2-ps5.jpg",
+      "is_active": true,
+      "game_codes": [
+        "SPDR-2024-PS5X-ABC1-DEF2",
+        "SPDR-2024-PS5X-GHI3-JKL4",
+        "SPDR-2024-PS5X-MNO5-PQR6"
+      ]
+    },
+    {
+      "name": "God of War Ragnarök PS5",
+      "description": "Join Kratos and Atreus on their epic journey through the Nine Realms. PlayStation 5 digital code.",
+      "platform": "PS5", 
+      "price": 59.99,
+      "image_url": "/images/god-of-war-ragnarok.jpg",
+      "is_active": true,
+      "game_codes": [
+        "GOWR-2024-PS5X-AAA1-BBB2",
+        "GOWR-2024-PS5X-CCC3-DDD4"
+      ]
+    },
+    {
+      "name": "Forza Horizon 5 Xbox Digital",
+      "description": "Open world racing adventure set in beautiful Mexico. Xbox Series X|S and Xbox One digital download.",
+      "platform": "Xbox",
+      "price": 59.99,
+      "image_url": "/images/forza-horizon-5.jpg",
+      "is_active": true,
+      "game_codes": [
+        "FORZ-2024-XBOX-111A-222B",
+        "FORZ-2024-XBOX-333C-444D",
+        "FORZ-2024-XBOX-555E-666F"
+      ]
+    },
+    {
+      "name": "Roblox Gift Card $25",
+      "description": "Add $25 worth of Robux to your Roblox account. Instant digital delivery.",
+      "platform": "Roblox",
+      "price": 25.00,
+      "image_url": "/images/roblox-25.jpg",
+      "is_active": true,
+      "game_codes": [
+        "RBLX-25-2024-XXXX-YYYY-ZZZZ",
+        "RBLX-25-2024-AAAA-BBBB-CCCC",
+        "RBLX-25-2024-DDDD-EEEE-FFFF",
+        "RBLX-25-2024-GGGG-HHHH-IIII"
+      ]
+    },
+    {
+      "name": "Elden Ring PC Steam Key",
+      "description": "FromSoftware's epic dark fantasy adventure. Steam activation key for PC.",
+      "platform": "PC",
+      "price": 54.99,
+      "image_url": "/images/elden-ring.jpg",
+      "is_active": true,
+      "game_codes": [
+        "ELRG-STEAM-2024-ABCD-EFGH-IJKL",
+        "ELRG-STEAM-2024-MNOP-QRST-UVWX"
+      ]
+    }
+  ],
+  "_instructions": {
+    "description": "Template file for seeding products with game codes. Modify the data above to match your inventory.",
+    "fields": {
+      "name": "String - Product display name (must be unique)",
+      "description": "String (optional) - Detailed product description",
+      "platform": "String - Gaming platform (PS5, Xbox, Roblox, PC, Nintendo, etc.)",
+      "price": "Decimal - Product price (use format: 123.45)",
+      "image_url": "String (optional) - Path to product image",
+      "is_active": "Boolean - Whether product is available for sale (true/false)",
+      "game_codes": "Array of strings - Digital codes for this product (will be encrypted when stored)"
+    },
+    "notes": [
+      "Remove this '_instructions' object before running the seed script",
+      "Each product name must be unique",
+      "Game codes will be automatically encrypted when stored in the database",
+      "You can have different numbers of game codes per product",
+      "Use realistic game code formats for your platform",
+      "Set is_active to false for products you want to create but not sell yet"
+    ],
+    "platform_examples": [
+      "PS5 - PlayStation 5 games",
+      "Xbox - Xbox Series X|S and Xbox One games", 
+      "PC - Steam, Epic Games, or other PC platform keys",
+      "Roblox - Robux gift cards and game passes",
+      "Nintendo - Nintendo Switch games",
+      "Mobile - iOS/Android game currencies"
+    ]
+  }
+} 

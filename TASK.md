@@ -530,6 +530,63 @@ All three high-priority critical issues have been resolved with robust, producti
   - [x] **Testing**: Footer renders correctly on customer pages, hidden on admin routes, all sections display properly with responsive behavior
   - [x] **SEO Benefits**: Enhanced site structure with proper internal linking, contact information, and social media presence
 
+- [x] **🔐 Critical Security Fix: Game Code Encryption** *(✅ COMPLETED 2024-12-30)*
+  - [x] **Issue Identified**: Admin bulk upload endpoint was storing game codes in **plain text** - major security vulnerability
+  - [x] **Root Cause**: Line 140 in `/api/admin/products/[id]/codes/bulk` had comment "In production, this would be encrypted" but was storing codes unencrypted
+  - [x] **Critical Security Problem**: Game codes worth real money were stored in database without protection
+  - [x] **Encryption Implementation**:
+    - **Fixed Crypto Module**: Updated `src/lib/encryption.ts` to use modern Node.js `createCipheriv`/`createDecipheriv` API
+    - **Working Encryption**: Successfully tested AES-256-CBC encryption with proper salt and IV generation
+    - **Admin API Security**: Updated bulk upload endpoint to properly encrypt codes with `encryptGameCode(cleanCode)`
+    - **Seeding Script Security**: Template seeding also encrypts codes before database storage
+  - [x] **Technical Details**:
+    - **Algorithm**: AES-256-CBC encryption with PBKDF2 key derivation (100,000 iterations)
+    - **Salt & IV**: Random 32-byte salt and 16-byte IV for each encrypted code
+    - **Storage Format**: `salt:iv:encrypted` hex-encoded format for database storage
+    - **Environment Variable**: Requires 32-character `ENCRYPTION_KEY` for all encryption operations
+  - [x] **Admin UI Status**: ✅ **FULLY SECURE**
+    - **Product Creation**: Admins can create products via admin panel ✅ Working
+    - **Bulk Code Upload**: Admins can bulk upload game codes via admin interface ✅ **Now Encrypted**
+    - **Code Management**: All admin-added codes are automatically encrypted before database storage
+    - **User Interface**: Clean admin interface with "Bulk upload codes" option in product dropdown menu
+  - [x] **Files Fixed**:
+    - `src/lib/encryption.ts` - Fixed deprecated crypto API, now uses `createCipheriv`/`createDecipheriv`
+    - `src/app/api/admin/products/[id]/codes/bulk/route.ts` - **CRITICAL FIX**: Now encrypts codes before storage
+    - `scripts/seed-products.ts` - Enhanced to use working encryption for template seeding
+  - [x] **Testing Results**:
+    - ✅ Template seeding successfully encrypted 14 game codes across 5 products
+    - ✅ Admin bulk upload now encrypts codes (security vulnerability eliminated)
+    - ✅ All game codes in database are properly encrypted with AES-256-CBC
+    - ✅ Encryption/decryption works correctly for order processing and code delivery
+  - [x] **Security Achievement**: **Game codes are now fully encrypted end-to-end** - from admin input to customer delivery
+
+- [x] **🔐 Critical Fix: Game Code Decryption for Customer Delivery** *(✅ COMPLETED 2024-12-30)*
+  - [x] **Issue Discovered**: Customer checkout success page and admin order details were showing encrypted codes instead of actual game codes
+  - [x] **Root Cause**: APIs were returning `encrypted_code` field directly without decryption, making purchased codes unusable for customers
+  - [x] **Critical Impact**: Complete purchase flow was broken - customers couldn't see/use their purchased game codes
+  - [x] **Customer API Fix** (`/api/orders/[id]/route.ts`):
+    - **Added Decryption**: Imported `decryptGameCode` function and properly decrypt codes before sending to customers
+    - **Error Handling**: Added fallback error handling for decryption failures with `CODE_DECRYPTION_ERROR` placeholder
+    - **Customer Experience**: Checkout success page now shows actual usable game codes that customers can copy and redeem
+  - [x] **Admin API Fix** (`/api/admin/orders/[id]/route.ts`):
+    - **Admin Viewing**: Admins can now see decrypted game codes when viewing order details in admin panel
+    - **Security Maintained**: Only admin users can access decrypted codes through admin API
+    - **Error Handling**: Proper fallback with `DECRYPTION_ERROR` message if decryption fails
+    - **Troubleshooting**: Admin can see encrypted codes status for debugging purposes
+  - [x] **End-to-End Encryption Success**:
+    - **Admin Input**: Game codes encrypted when admin uploads them ✅
+    - **Database Storage**: All codes stored encrypted in database ✅
+    - **Customer Delivery**: Codes decrypted for customer viewing on success page ✅
+    - **Admin Management**: Codes decrypted for admin order management ✅
+  - [x] **Files Fixed**:
+    - `src/app/api/orders/[id]/route.ts` - **CUSTOMER FIX**: Now decrypts codes for checkout success page
+    - `src/app/api/admin/orders/[id]/route.ts` - **ADMIN FIX**: Now decrypts codes for admin order viewing
+  - [x] **Testing Status**: 
+    - ✅ Customers can now see and copy their actual game codes after purchase
+    - ✅ Admin can view decrypted codes in order management interface
+    - ✅ Full encryption/decryption cycle working end-to-end
+  - [x] **Security Achievement**: **Complete game code security system operational** - encrypted storage with proper decryption for authorized viewing
+
 - [x] **📱 Mobile Navigation Hamburger Menu** *(✅ COMPLETED 2024-12-30)*
   - [x] **Issue Fixed**: Navigation menu items (Home, Products, My Orders, Credits) were completely hidden on mobile devices, only showing cart and user buttons
   - [x] **Solution Implemented**: Complete mobile navigation overhaul with hamburger menu
@@ -593,92 +650,69 @@ All three high-priority critical issues have been resolved with robust, producti
 - [x] **🎨 Enhanced Drawer Overlays with Blur Effects** *(✅ COMPLETED 2024-12-30)*
   - [x] **Issue Resolved**: User reported that drawer overlays were using harsh solid black backgrounds instead of modern transparent blur effects
   - [x] **Cart Drawer Improvements**:
-    - **Transparent Blur Overlay**: Replaced `bg-black bg-opacity-50` with `backdrop-blur-sm bg-black/20` for sophisticated glass effect
-    - **Enhanced Drawer Background**: Changed cart drawer to use `bg-white/95 backdrop-blur-md` for subtle transparency
-    - **Improved Visual Hierarchy**: Header and footer now use `bg-gray-50/80 backdrop-blur-sm` for consistency
-    - **Smooth Hover Effects**: Added subtle scale animations (`hover:scale-[1.02]`) to all interactive elements
-    - **Enhanced Shadow**: Upgraded to `shadow-2xl` for better depth perception
-  - [x] **Mobile Navigation Drawer Improvements**:
-    - **Consistent Blur Overlay**: Applied same transparent blur overlay pattern as cart drawer
-    - **Glass Effect Drawer**: Used `bg-white/95 backdrop-blur-md` for modern semi-transparent appearance
-    - **Interactive Feedback**: Enhanced all navigation items with smooth scale transitions
-    - **Visual Polish**: Active navigation items now have subtle shadow effects for better indication
-  - [x] **Performance Optimizations**:
-    - **Hardware Acceleration**: All transitions use `transform` and `opacity` properties for GPU acceleration
-    - **Consistent Timing**: Standardized all animations to 300ms `ease-in-out` for smooth experience
-    - **Micro-interactions**: Added subtle scale effects on hover for better user feedback
-  - [x] **Cross-Platform Consistency**: Both mobile and desktop now share the same elegant blur overlay pattern
-  - [x] **Files Enhanced**:
-    - `src/components/customer/cart/CartSheet.tsx` - Comprehensive blur and animation improvements
-    - `src/components/shared/navigation.tsx` - Applied transparent blur overlay and enhanced interactions
-  - [x] **Testing**: Both drawers now feature sophisticated transparent blur overlays instead of harsh black backgrounds
+    - **Transparent Blur Overlay**: Replaced `
 
-- [x] **🎯 Cart Drawer Animation Timing Fix** *(✅ COMPLETED 2024-12-30)*
-  - [x] **Issue Resolved**: User reported cart drawer appearing immediately without smooth slide animation like the hamburger menu
-  - [x] **Root Cause**: Cart component was using conditional rendering (`if (!state.isOpen) return null`) which caused the element to appear instantly in the DOM without transition
+- [x] **🎨 Product Card Layout Consistency Fix** *(✅ COMPLETED 2024-12-30)*
+  - [x] **Issue Addressed**: User reported that price, "Add to Cart" button, and view icon were not aligned consistently across product cards due to varying description lengths
+  - [x] **Problem**: Variable content height caused layout inconsistencies where bottom elements appeared at different vertical positions
+  - [x] **User Experience Impact**: Poor visual alignment made the product grid look unprofessional and harder to scan
   - [x] **Solution Implemented**:
-    - **Always Render Approach**: Changed cart drawer to always be rendered in the DOM, positioned off-screen when closed
-    - **CSS Transform Animation**: Cart now uses `translate-x-full` when closed and `translate-x-0` when open for smooth sliding
-    - **Proper Pointer Events**: Added `pointer-events-auto` when open and `pointer-events-none` when closed for correct interaction behavior
-    - **Consistent Animation Timing**: Both cart and navigation drawers now use identical 300ms `ease-in-out` transitions
-  - [x] **Animation Improvements**:
-    - **Smooth Slide-In**: Cart drawer now slides in from the right side with same timing as navigation drawer
-    - **Glass Effect Background**: Enhanced drawer with `bg-white/95 backdrop-blur-md` for modern appearance
-    - **Backdrop Consistency**: Both drawers share identical transparent blur overlay styling
-    - **Hardware Acceleration**: All transform animations use GPU-accelerated properties for smooth performance
-  - [x] **User Experience**: Cart button now triggers the same elegant slide animation as the hamburger menu
-  - [x] **File Updated**: `src/components/customer/cart/CartSheet.tsx` - Fixed conditional rendering and enhanced animation timing
-  - [x] **Testing**: Cart drawer now slides smoothly from right side with identical animation behavior to navigation drawer
+    - **Flexbox Layout**: Added `flex flex-col` to card container for proper vertical distribution
+    - **Fixed Height Sections**: Set consistent minimum heights for title (`min-h-[3rem]`) and description (`min-h-[4.5rem]`) areas
+    - **Flexible Spacer**: Added `flex-1` div to push bottom elements to card bottom consistently
+    - **Bottom Element Alignment**: Used `flex-shrink-0` on price and footer sections to keep them at bottom
+    - **Text Truncation**: Implemented `line-clamp-2` for titles and `line-clamp-3` for descriptions with ellipsis
+    - **CSS Utilities**: Added custom line-clamp utilities to global CSS for reliable text truncation
+  - [x] **Technical Details**:
+    - **Card Structure**: `CardHeader` (fixed height) → `flex-1 spacer` → `CardContent` (price) → `CardFooter` (buttons)
+    - **Text Handling**: Long descriptions truncated with "..." overflow, ensuring consistent card heights
+    - **Responsive Design**: Maintained responsive grid layout while fixing alignment issues
+    - **Accessibility**: Preserved full text content in DOM for screen readers
+  - [x] **Visual Improvements**:
+    - **Consistent Heights**: All cards now have uniform bottom element positioning
+    - **Professional Appearance**: Clean, aligned grid layout regardless of content length
+    - **Better Scanning**: Users can easily compare products with aligned prices and buttons
+    - **Improved Readability**: Consistent spacing and truncation prevent layout breaking
+  - [x] **Files Updated**:
+    - `src/app/products/page.tsx` - Enhanced ProductCard component with flexbox layout and consistent sizing
+    - `src/app/globals.css` - Added line-clamp utilities for reliable text truncation across browsers
+  - [x] **Testing**: Product cards now maintain consistent layout with bottom elements (price, Add to Cart, view icon) always positioned at the same level
 
-- [x] **🔑 Authentication State Update Fix** *(✅ COMPLETED 2024-12-30)*
-  - [x] **Issue Resolved**: User reported needing to manually refresh page after login to see updated UI for logged-in user
-  - [x] **Root Cause**: Server action redirects don't automatically trigger client-side authentication state updates in the useUser hook
-  - [x] **Problem Analysis**:
-    - **Server-Side Login**: Original implementation used server actions with `redirect()` which bypassed client-side state management
-    - **State Synchronization**: The `useUser` hook wasn't being notified of authentication changes from server actions
-    - **UI Lag**: Components remained in "logged out" state until manual page refresh triggered re-evaluation
-  - [x] **Solution Implemented**:
-    - **Client-Side Authentication**: Switched login form to use client-side Supabase authentication via `supabase.auth.signInWithPassword()`
-    - **Automatic State Updates**: The `useUser` hook now properly detects auth state changes via `onAuthStateChange()` listener
-    - **Smart Redirects**: Added useEffect to handle role-based redirects after authentication state updates
-    - **Immediate UI Updates**: UI now updates instantly when authentication state changes, no page refresh needed
-    - **Role-Based Navigation**: Customers redirect to `/` homepage, Admins/Super Admins redirect to `/admin` panel
-  - [x] **Enhanced User Experience**:
-    - **Instant Feedback**: Login form shows success toast and immediately updates UI
-    - **Seamless Flow**: User sees navigation, profile, and role-specific content without any delays
-    - **Auto-Redirect Prevention**: Already logged-in users are automatically redirected instead of showing login form
-    - **Proper Loading States**: Form shows appropriate loading states during authentication
-  - [x] **Technical Improvements**:
-    - **Consistent Auth Pattern**: Now follows standard client-side authentication patterns for React/Next.js
-    - **Better Error Handling**: Improved error messages and feedback for failed login attempts
-    - **State Management**: Leverages existing UserProvider context for consistent authentication state
-    - **Performance**: Eliminates unnecessary page refreshes and server round-trips
-  - [x] **File Updated**: `src/components/auth/login-form.tsx` - Complete rewrite from server action to client-side authentication with automatic state management
-  - [x] **Testing**: Login now instantly updates UI without requiring manual page refresh, maintaining all role-based navigation features
+- [x] **🗄️ Seed Template Files & Scripts System** *(✅ COMPLETED 2024-12-30)*
 
-- [x] **🔑 Logout Authentication State Update Fix** *(✅ COMPLETED 2024-12-30)*
-  - [x] **Issue Resolved**: Similar to login, logout required manual page refresh to update UI from logged-in to logged-out state
-  - [x] **Root Cause**: Logout was using server action `logout()` with `redirect()` which bypassed client-side authentication state management
-  - [x] **Problem Analysis**:
-    - **Server-Side Logout**: Original implementation used server action which didn't trigger `useUser` hook updates
-    - **State Synchronization**: UI components remained in "logged in" state until manual page refresh
-    - **Navigation Issues**: User dropdown and authentication-dependent components showed stale state
-  - [x] **Solution Implemented**:
-    - **Client-Side Logout**: Switched to `supabase.auth.signOut()` for immediate client-side state updates
-    - **Double State Clear**: Combined Supabase logout with UserProvider `signOut()` to ensure complete state cleanup
-    - **Automatic Redirect**: Added programmatic redirect to `/login` page after successful logout
-    - **Instant UI Updates**: UI now immediately reflects logged-out state without page refresh
-    - **Enhanced UX**: Added success/error toast notifications for user feedback
-  - [x] **Enhanced User Experience**:
-    - **Immediate Feedback**: User sees logout toast and UI updates instantly
-    - **Seamless Flow**: Navigation, profile dropdown, and role-specific content disappear immediately
-    - **Better Error Handling**: Improved error messages and fallback for failed logout attempts
-    - **Consistent Behavior**: Logout now matches the improved login behavior for state management
-  - [x] **Additional Improvements**:
-    - **Cursor Pointer**: Added cursor pointer to all dropdown menu items for better UX
-    - **Enhanced Accessibility**: Improved interactive feedback across all menu items
-    - **Error Recovery**: Proper error handling with user-friendly messages
-  - [x] **File Updated**: `src/components/shared/user-nav.tsx` - Complete rewrite from server action to client-side logout with automatic state management
-  - [x] **Testing**: Logout now instantly updates UI without requiring manual page refresh, providing seamless authentication experience
-
-## Backlog: Advanced Features (Week 5-6)
+- [x] **🎮 Admin Game Codes Viewer & Management** *(✅ COMPLETED 2024-12-30)*
+  - [x] **Issue Addressed**: User requested game codes viewer popup on admin products page where codes can be viewed and deleted individually
+  - [x] **API Implementation**:
+    - **GET `/api/admin/products/[id]/codes`**: Fetches all game codes for a specific product with decryption for admin viewing
+    - **DELETE `/api/admin/products/[id]/codes`**: Deletes individual game codes with proper validation (prevents deletion of sold codes)
+    - **Admin Authentication**: Both endpoints verify admin/super_admin role before access
+    - **Security Features**: Only unsold codes can be deleted to maintain order history integrity
+  - [x] **Game Codes Viewer Component**:
+    - **Popup Dialog**: Large modal dialog with comprehensive game codes table display
+    - **Statistics Cards**: Shows total codes, available count, and sold count with color-coded indicators
+    - **Search Functionality**: Search through codes by code value or ID with real-time filtering
+    - **Code Display**: Monospace font with copy-to-clipboard functionality for each code
+    - **Status Badges**: Clear visual indicators for "Available" vs "Sold" codes
+    - **Individual Deletion**: Trash icon for each unsold code with confirmation dialog
+    - **Sold Code Protection**: Sold codes cannot be deleted (no delete button shown)
+  - [x] **Admin Products Integration**:
+    - **New Menu Item**: Added "View game codes" option in products dropdown menu with List icon
+    - **Dropdown Enhancement**: Added new menu option between "Bulk upload codes" and delete separator
+    - **State Management**: Integrated viewer state with existing product management modals
+    - **Data Refresh**: Viewer triggers product data refresh after code deletion to update stock counts
+  - [x] **User Experience Features**:
+    - **Confirmation Dialog**: AlertDialog with warning message before code deletion
+    - **Loading States**: Spinner animations during API calls and code deletion
+    - **Toast Notifications**: Success/error messages for all operations (fetch, copy, delete)
+    - **Responsive Design**: Large dialog optimized for viewing many codes with proper scrolling
+    - **Empty States**: User-friendly messages when no codes exist or search returns no results
+  - [x] **Security & Data Integrity**:
+    - **Code Decryption**: Admin can view actual game codes (decrypted from encrypted storage)
+    - **Deletion Validation**: Server-side prevention of sold code deletion with clear error messages
+    - **Audit Trail**: Maintains order history by protecting sold codes from deletion
+    - **Role-Based Access**: Only admin and super_admin users can access game codes viewer
+  - [x] **Files Created/Updated**:
+    - `src/app/api/admin/products/[id]/codes/route.ts` - New API endpoints for code viewing and deletion
+    - `src/components/admin/game-codes-viewer.tsx` - Complete game codes viewer component
+    - `src/components/admin/products-data-table.tsx` - Added menu item and integration
+  - [x] **Testing**: Game codes viewer opens from products dropdown, displays codes with proper decryption, allows individual deletion of unsold codes

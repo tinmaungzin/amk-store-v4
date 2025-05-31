@@ -1,14 +1,14 @@
-import crypto from 'crypto'
+const crypto = require('crypto')
 
-const ALGORITHM = 'aes-256-gcm'
-const IV_LENGTH = 16 // For GCM, this is always 16
+const ALGORITHM = 'aes-256-cbc'
+const IV_LENGTH = 16
 const SALT_LENGTH = 32
 
 /**
- * Encrypts a game code using AES-256-GCM
+ * Encrypts a game code using AES-256-CBC
  * @param text - The game code to encrypt
  * @param password - The encryption password (from environment variable)
- * @returns Encrypted string in format: salt:iv:tag:encrypted
+ * @returns Encrypted string in format: salt:iv:encrypted
  * @throws Error if encryption fails
  */
 export function encryptGameCode(text: string, password?: string): string {
@@ -30,22 +30,17 @@ export function encryptGameCode(text: string, password?: string): string {
     // Create key from password and salt
     const key = crypto.pbkdf2Sync(encryptionKey, salt, 100000, 32, 'sha256')
     
-    // Create cipher with IV
-    const cipher = crypto.createCipher(ALGORITHM, key)
-    cipher.setAAD(Buffer.from('game-code', 'utf8'))
+    // Create cipher with key and IV
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
     
     // Encrypt
     let encrypted = cipher.update(text, 'utf8', 'hex')
     encrypted += cipher.final('hex')
     
-    // Get authentication tag
-    const tag = cipher.getAuthTag()
-    
-    // Combine salt:iv:tag:encrypted
+    // Combine salt:iv:encrypted
     return [
       salt.toString('hex'),
       iv.toString('hex'),
-      tag.toString('hex'),
       encrypted
     ].join(':')
     
@@ -56,8 +51,8 @@ export function encryptGameCode(text: string, password?: string): string {
 }
 
 /**
- * Decrypts a game code using AES-256-GCM
- * @param encryptedText - The encrypted string in format: salt:iv:tag:encrypted
+ * Decrypts a game code using AES-256-CBC
+ * @param encryptedText - The encrypted string in format: salt:iv:encrypted
  * @param password - The encryption password (from environment variable)
  * @returns Decrypted game code
  * @throws Error if decryption fails
@@ -76,23 +71,21 @@ export function decryptGameCode(encryptedText: string, password?: string): strin
 
     // Split the encrypted string
     const parts = encryptedText.split(':')
-    if (parts.length !== 4) {
+    if (parts.length !== 3) {
       throw new Error('Invalid encrypted game code format')
     }
 
-    const [saltHex, , tagHex, encrypted] = parts
+    const [saltHex, ivHex, encrypted] = parts
     
     // Convert hex strings back to buffers
     const salt = Buffer.from(saltHex, 'hex')
-    const tag = Buffer.from(tagHex, 'hex')
+    const iv = Buffer.from(ivHex, 'hex')
     
     // Recreate key from password and salt
     const key = crypto.pbkdf2Sync(encryptionKey, salt, 100000, 32, 'sha256')
     
-    // Create decipher
-    const decipher = crypto.createDecipher(ALGORITHM, key)
-    decipher.setAuthTag(tag)
-    decipher.setAAD(Buffer.from('game-code', 'utf8'))
+    // Create decipher with key and IV
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
     
     // Decrypt
     let decrypted = decipher.update(encrypted, 'hex', 'utf8')

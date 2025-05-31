@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { encryptGameCode } from '@/lib/encryption'
 import { z } from 'zod'
 
 // Bulk upload schema
@@ -136,7 +137,7 @@ export async function POST(
         // Code is valid, add to insertion list
         codesToInsert.push({
           product_id: productId,
-          encrypted_code: cleanCode, // In production, this would be encrypted
+          encrypted_code: encryptGameCode(cleanCode), // Now properly encrypted!
           is_sold: false,
         })
       } catch (error) {

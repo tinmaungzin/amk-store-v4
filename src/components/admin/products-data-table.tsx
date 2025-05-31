@@ -36,10 +36,12 @@ import {
   Search,
   Package,
   AlertTriangle,
-  Upload
+  Upload,
+  List
 } from 'lucide-react'
 import { ProductForm } from './product-form'
 import { BulkCodeUpload } from './bulk-code-upload'
+import { GameCodesViewer } from './game-codes-viewer'
 
 export interface Product {
   id: string
@@ -72,6 +74,7 @@ export function ProductsDataTable({ products, onProductUpdate }: ProductsDataTab
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false)
+  const [isGameCodesViewerOpen, setIsGameCodesViewerOpen] = useState(false)
 
   // Filter products based on search term
   const filteredProducts = products.filter(product =>
@@ -264,6 +267,15 @@ export function ProductsDataTable({ products, onProductUpdate }: ProductsDataTab
                           <Upload className="w-4 h-4 mr-2" />
                           Bulk upload codes
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedProduct(product)
+                            setIsGameCodesViewerOpen(true)
+                          }}
+                        >
+                          <List className="w-4 h-4 mr-2" />
+                          View game codes
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => {
@@ -379,6 +391,18 @@ export function ProductsDataTable({ products, onProductUpdate }: ProductsDataTab
           setIsBulkUploadOpen(false)
           setSelectedProduct(null)
         }}
+      />
+
+      {/* Game Codes Viewer Dialog */}
+      <GameCodesViewer
+        isOpen={isGameCodesViewerOpen}
+        onClose={() => {
+          setIsGameCodesViewerOpen(false)
+          setSelectedProduct(null)
+        }}
+        productId={selectedProduct?.id}
+        productName={selectedProduct?.name}
+        onSuccess={onProductUpdate}
       />
 
       {/* Results Summary */}

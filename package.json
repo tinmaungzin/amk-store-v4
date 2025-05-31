@@ -17,6 +17,9 @@
     "seed:prisma:reset": "tsx scripts/seed-with-prisma.ts reset",
     "seed:prisma:clear": "tsx scripts/seed-with-prisma.ts clear",
     "seed:prisma:verify": "tsx scripts/seed-with-prisma.ts verify",
+    "seed:profiles": "tsx scripts/seed-profiles.ts",
+    "seed:profiles:auth": "tsx scripts/seed-profiles-with-auth.ts",
+    "seed:products": "tsx scripts/seed-products.ts",
     "create:admin-accounts": "tsx scripts/create-admin-accounts.js",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
@@ -29,6 +32,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "^6.8.2",
+    "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-dialog": "^1.1.14",

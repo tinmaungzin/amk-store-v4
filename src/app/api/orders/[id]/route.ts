@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { decryptGameCode } from '@/lib/encryption'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -85,7 +86,13 @@ export async function GET(
       const item = itemsMap.get(key)
       item.quantity += orderItem.quantity
       if (orderItem.game_code) {
-        item.gameCodes.push(orderItem.game_code.encrypted_code)
+        try {
+          const decryptedCode = decryptGameCode(orderItem.game_code.encrypted_code)
+          item.gameCodes.push(decryptedCode)
+        } catch (decryptError) {
+          console.error('Failed to decrypt game code:', decryptError)
+          item.gameCodes.push('CODE_DECRYPTION_ERROR')
+        }
       }
     })
 

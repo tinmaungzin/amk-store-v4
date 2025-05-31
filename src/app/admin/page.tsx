@@ -155,7 +155,7 @@ export default async function AdminPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button asChild className="h-auto py-4 px-6">
+            <Button asChild variant="outline" className="h-auto py-4 px-6">
               <Link href="/admin/products" className="flex flex-col items-center space-y-2">
                 <Package className="h-6 w-6" />
                 <div className="text-center">

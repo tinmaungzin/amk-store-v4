@@ -54,8 +54,8 @@ function ProductCard({ product }: { product: ProductWithCodes }) {
   const inStock = availableCodes > 0
 
   return (
-    <Card className={`h-full transition-all duration-200 hover:shadow-lg ${!inStock ? 'opacity-75' : ''}`}>
-      <CardHeader>
+    <Card className={`h-full transition-all duration-200 hover:shadow-lg ${!inStock ? 'opacity-75' : ''} flex flex-col`}>
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-start justify-between">
           <Badge variant={
             product.platform === 'PS5' ? 'default' :
@@ -69,19 +69,21 @@ function ProductCard({ product }: { product: ProductWithCodes }) {
             {inStock ? `${availableCodes} in stock` : 'Out of stock'}
           </Badge>
         </div>
-        <CardTitle className="line-clamp-2">{product.name}</CardTitle>
-        <CardDescription className="line-clamp-3">
-          {product.description}
+        <CardTitle className="line-clamp-2 min-h-[3rem]">{product.name}</CardTitle>
+        <CardDescription className="line-clamp-3 min-h-[4.5rem] text-sm">
+          {product.description || 'No description available'}
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
+      <div className="flex-1" />
+      
+      <CardContent className="flex-shrink-0 pb-2">
         <div className="text-2xl font-bold text-green-600">
           ${product.price.toString()}
         </div>
       </CardContent>
       
-      <CardFooter className="flex gap-2">
+      <CardFooter className="flex gap-2 flex-shrink-0 pt-2">
         <AddToCartButton
           product={{
             id: product.id,
@@ -125,17 +127,17 @@ function ProductFilters({
   platforms: string[]
 }) {
   return (
-    <div className="bg-white p-6 rounded-lg border shadow-sm space-y-4">
+    <div className="bg-white p-6 rounded-lg border shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <Filter className="w-5 h-5 text-gray-500" />
         <h3 className="text-lg font-semibold">Filters & Search</h3>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Search */}
-        <div className="space-y-2">
-          <Label htmlFor="search">Search Products</Label>
-          <div className="relative">
+      <div className="flex flex-col lg:flex-row gap-6 lg:items-end">
+        {/* Search - Left Side */}
+        <div className="flex-1 min-w-0">
+          <Label htmlFor="search" className="text-sm font-medium text-gray-700">Search Products</Label>
+          <div className="relative mt-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               id="search"
@@ -147,40 +149,44 @@ function ProductFilters({
           </div>
         </div>
 
-        {/* Platform Filter */}
-        <div className="space-y-2">
-          <Label htmlFor="platform">Platform</Label>
-          <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Platforms" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Platforms</SelectItem>
-              {platforms.map((platform) => (
-                <SelectItem key={platform} value={platform}>
-                  {platform}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Visual Separator */}
+        <div className="hidden lg:block w-px h-10 bg-gray-200 mx-4"></div>
 
-        {/* Sort */}
-        <div className="space-y-2">
-          <Label htmlFor="sort">Sort By</Label>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sort by..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-              <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-              <SelectItem value="price-asc">Price (Low to High)</SelectItem>
-              <SelectItem value="price-desc">Price (High to Low)</SelectItem>
-              <SelectItem value="stock-desc">Stock (High to Low)</SelectItem>
-              <SelectItem value="platform">Platform</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Platform and Sort - Right Side */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:flex-shrink-0">
+          <div className="min-w-0 w-full sm:w-48">
+            <Label htmlFor="platform" className="text-sm font-medium text-gray-700">Platform</Label>
+            <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="All Platforms" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Platforms</SelectItem>
+                {platforms.map((platform) => (
+                  <SelectItem key={platform} value={platform}>
+                    {platform}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="min-w-0 w-full sm:w-48">
+            <Label htmlFor="sort" className="text-sm font-medium text-gray-700">Sort By</Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                <SelectItem value="price-asc">Price (Low to High)</SelectItem>
+                <SelectItem value="price-desc">Price (High to Low)</SelectItem>
+                <SelectItem value="stock-desc">Stock (High to Low)</SelectItem>
+                <SelectItem value="platform">Platform</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>

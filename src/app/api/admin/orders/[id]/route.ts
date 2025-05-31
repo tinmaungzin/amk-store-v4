@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { decryptGameCode } from '@/lib/encryption'
 import { prisma } from '@/lib/prisma'
-// TODO: Fix encryption implementation
-// import { decryptGameCode } from '@/lib/encryption'
 
 /**
  * GET /api/admin/orders/[id]
@@ -73,11 +72,16 @@ export async function GET(
 
     // Transform order items efficiently
     const transformedItems = order.order_items.map((item) => {
-      // Show encrypted codes for admin viewing
-      // TODO: Implement proper decryption when encryption is ready
-      const gameCodes = item.game_code ? [
-        `[ENCRYPTED: ${item.game_code.encrypted_code.substring(0, 20)}...]`
-      ] : []
+      // Decrypt game codes for admin viewing
+      const gameCodes = item.game_code ? (() => {
+        try {
+          const decryptedCode = decryptGameCode(item.game_code.encrypted_code)
+          return [decryptedCode]
+        } catch (decryptError) {
+          console.error('Failed to decrypt game code for admin:', decryptError)
+          return [`[DECRYPTION_ERROR: ${item.game_code.encrypted_code.substring(0, 20)}...]`]
+        }
+      })() : []
 
       return {
         id: item.id,

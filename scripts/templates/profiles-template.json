@@ -1,0 +1,89 @@
+{
+  "profiles": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "email": "admin@example.com",
+      "full_name": "Super Admin User",
+      "credit_balance": 0.00,
+      "role": "super_admin",
+      "password": "admin123456"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "email": "manager@example.com",
+      "full_name": "Store Manager",
+      "credit_balance": 0.00,
+      "role": "admin",
+      "password": "manager123456"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000001",
+      "email": "customer1@example.com",
+      "full_name": "John Customer",
+      "credit_balance": 100.00,
+      "role": "customer",
+      "password": "customer123"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000002",
+      "email": "customer2@example.com", 
+      "full_name": "Jane Gamer",
+      "credit_balance": 250.50,
+      "role": "customer",
+      "password": "customer123"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000003",
+      "email": "customer3@example.com",
+      "full_name": "Mike Player",
+      "credit_balance": 0.00,
+      "role": "customer"
+    }
+  ],
+  "_instructions": {
+    "description": "Template file for seeding user profiles. Two seeding approaches available:",
+    "seeding_approaches": {
+      "basic": {
+        "command": "npm run seed:profiles",
+        "description": "Creates profiles with auto-generated UUIDs (may fail with foreign key constraints)",
+        "pros": ["Simple", "Fast"],
+        "cons": ["May fail if profiles table has FK constraint to auth.users", "No authentication"]
+      },
+      "auth_integrated": {
+        "command": "npm run seed:profiles:auth",
+        "description": "Creates both Supabase auth users and profiles (recommended)",
+        "pros": ["Proper auth integration", "Handles foreign key constraints", "Users can login"],
+        "cons": ["Requires SUPABASE_SERVICE_ROLE_KEY", "Slightly slower"]
+      }
+    },
+    "fields": {
+      "id": "UUID string - Used for identification (ignored in auth-integrated mode)",
+      "email": "String - Unique email address for the user",
+      "full_name": "String (optional) - Full display name for the user",
+      "credit_balance": "Decimal - Starting credit balance (use format: 123.45)",
+      "role": "String - Must be one of: 'customer', 'admin', 'super_admin'",
+      "password": "String (optional) - Password for auth user (defaults to 'temp123456' if not provided)"
+    },
+    "environment_requirements": {
+      "basic_seeding": ["DATABASE_URL"],
+      "auth_integrated_seeding": [
+        "DATABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_URL", 
+        "SUPABASE_SERVICE_ROLE_KEY"
+      ]
+    },
+    "notes": [
+      "Remove this '_instructions' object before running the seed script",
+      "Ensure all email addresses are unique",
+      "Credit balance should be 0.00 for admin users",
+      "If you get foreign key constraint errors with basic seeding, use auth-integrated seeding",
+      "Users created with auth integration can login to the application",
+      "Default password 'temp123456' will be used if no password is specified"
+    ],
+    "troubleshooting": {
+      "foreign_key_error": "Use 'npm run seed:profiles:auth' instead of 'npm run seed:profiles'",
+      "missing_supabase_service_key": "Add SUPABASE_SERVICE_ROLE_KEY to your .env.local file",
+      "email_already_exists": "Check for duplicate emails in template or existing database"
+    }
+  }
+} 
