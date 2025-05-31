@@ -274,11 +274,8 @@ function ProductsGrid() {
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold mb-2">No products found</h3>
         <p className="text-muted-foreground mb-4">
-          The database appears to be empty. Try seeding the database with sample data.
+          The database appears to be empty.
         </p>
-        <Badge variant="outline">
-          Run: npm run seed:prisma
-        </Badge>
       </div>
     )
   }

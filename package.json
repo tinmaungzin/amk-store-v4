@@ -20,6 +20,7 @@
     "seed:profiles": "tsx scripts/seed-profiles.ts",
     "seed:profiles:auth": "tsx scripts/seed-profiles-with-auth.ts",
     "seed:products": "tsx scripts/seed-products.ts",
+    "seed:clear-except-profiles": "tsx scripts/seed-clear-except-profiles.ts",
     "create:admin-accounts": "tsx scripts/create-admin-accounts.js",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",

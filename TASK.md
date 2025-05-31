@@ -716,3 +716,29 @@ All three high-priority critical issues have been resolved with robust, producti
     - `src/components/admin/game-codes-viewer.tsx` - Complete game codes viewer component
     - `src/components/admin/products-data-table.tsx` - Added menu item and integration
   - [x] **Testing**: Game codes viewer opens from products dropdown, displays codes with proper decryption, allows individual deletion of unsold codes
+
+- [x] **🧹 Database Clear Script (Preserve Profiles)** *(✅ COMPLETED 2024-12-30)*
+  - [x] **Issue Addressed**: User requested a script to clear all database data except profiles table for development workflow
+  - [x] **Script Features**:
+    - **Smart Deletion Order**: Handles foreign key constraints by deleting in proper sequence (game_codes → order_items → orders → credit_requests → products)
+    - **Profile Preservation**: Completely preserves profiles table so user accounts remain intact
+    - **Environment Safety**: Prevents accidental execution in production environment
+    - **Comprehensive Logging**: Shows progress for each table and provides detailed summary
+    - **Data Verification**: Counts remaining data in each table to confirm successful clearance
+  - [x] **Tables Cleared**:
+    - **game_codes**: All encrypted game codes removed
+    - **order_items**: All order line items cleared
+    - **orders**: All customer orders deleted
+    - **credit_requests**: All credit requests removed
+    - **products**: All product catalog cleared
+  - [x] **Tables Preserved**:
+    - **profiles**: All user accounts maintained (admins, customers, super_admins)
+  - [x] **Usage & Benefits**:
+    - **Command**: `npm run seed:clear-except-profiles`
+    - **Development Workflow**: Reset data while keeping user accounts for testing
+    - **Quick Restart**: Clear database and re-seed products without recreating users
+    - **Account Preservation**: Users can continue logging in with existing credentials
+  - [x] **Files Created**:
+    - `scripts/seed-clear-except-profiles.ts` - Complete database clearing script with safety checks
+    - `package.json` - Added new npm script for easy execution
+  - [x] **Next Steps Guidance**: Script provides clear instructions for re-seeding data after clearance
